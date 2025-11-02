@@ -1,0 +1,20 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "name": "Example Project - 2024 Season Scouting",
+      "description": "Initial goalie scouting for the 2024 hockey season",
+      "date_created": "2024-01-15",
+      "status": "completed",
+      "goalies_scouted": 12
+    },
+    {
+      "id": 2,
+      "name": "2025 High School Scouting",
+      "description": "Evaluating goalie prospects for high school teams",
+      "date_created": "2025-11-02",
+      "status": "active",
+      "goalies_scouted": 0
+    }
+  ]
+}
