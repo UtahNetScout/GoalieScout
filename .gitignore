@@ -37,6 +37,12 @@ wheels/
 # Database files
 goalies_data.json
 
+# Blog posts
+blog_posts/
+
+# Social media tracking
+last_social_post.json
+
 # Logs
 *.log
 

@@ -184,11 +184,28 @@ def rank_goalies(goalies):
 # RUN PLATFORM
 # -----------------------------
 if __name__ == "__main__":
-    print("[→] Loading goalies database...")
+    # Import new modules
+    from ai_providers import get_ai_provider
+    from blog_generator import BlogGenerator
+    from social_media import XPoster, AutomatedSocialMedia
+    
+    # Configuration
+    AI_PROVIDER = os.getenv("AI_PROVIDER", "openai")  # openai, anthropic, or ollama
+    ENABLE_BLOGGING = os.getenv("ENABLE_BLOGGING", "true").lower() == "true"
+    ENABLE_SOCIAL = os.getenv("ENABLE_SOCIAL", "true").lower() == "true"
+    SOCIAL_DRY_RUN = os.getenv("SOCIAL_DRY_RUN", "true").lower() == "true"
+    
+    print(f"[→] Starting Black Ops Goalie Scouting Platform...")
+    print(f"[→] AI Provider: {AI_PROVIDER}")
+    print(f"[→] Blogging: {'Enabled' if ENABLE_BLOGGING else 'Disabled'}")
+    print(f"[→] Social Media: {'Enabled (Dry Run)' if SOCIAL_DRY_RUN else 'Enabled (Live)' if ENABLE_SOCIAL else 'Disabled'}")
+    
+    print("\n[→] Loading goalies database...")
     goalies = load_goalies()
     print(f"[✓] Loaded {len(goalies)} goalies")
 
     # 1. Auto scrape all leagues
+    print("\n[→] Step 1: Scraping leagues...")
     for league_name, url in LEAGUES.items():
         print(f"[→] Scraping {league_name}...")
         scrape_league(url, league_name)
@@ -196,16 +213,84 @@ if __name__ == "__main__":
 
     # Reload updated goalies
     goalies = load_goalies()
+    print(f"[✓] Total goalies after scraping: {len(goalies)}")
 
     # 2. Generate AI scouting reports
-    for g in goalies:
-        print(f"[→] Generating AI report for {g['name']}")
-        generate_ai_report(g)
-        time.sleep(1)
+    print("\n[→] Step 2: Generating AI scouting reports...")
+    ai_provider = get_ai_provider(AI_PROVIDER)
+    
+    if ai_provider:
+        for g in goalies:
+            if not g.get('notes') or g.get('notes') == 'Sample scouting notes' or g.get('notes') == 'Sample notes':
+                print(f"[→] Generating AI report for {g['name']}")
+                report = ai_provider.generate_scouting_report(g)
+                
+                if report:
+                    g["notes"] = report
+                    
+                    # Extract tier and score
+                    report_lower = report.lower()
+                    if "top prospect" in report_lower:
+                        g["tier"] = "Top Prospect"
+                        g["ai_score"] = 90
+                    elif "sleeper" in report_lower:
+                        g["tier"] = "Sleeper"
+                        g["ai_score"] = 75
+                    elif "watch" in report_lower:
+                        g["tier"] = "Watch"
+                        g["ai_score"] = 65
+                    elif "red flag" in report_lower:
+                        g["tier"] = "Red Flag"
+                        g["ai_score"] = 50
+                    else:
+                        g["tier"] = "Unknown"
+                        g["ai_score"] = 60
+                    
+                    # Try to extract numeric score
+                    score_match = re.search(r'\b(\d{1,3})\b', report)
+                    if score_match:
+                        extracted_score = int(score_match.group(1))
+                        if 0 <= extracted_score <= 100:
+                            g["ai_score"] = extracted_score
+                
+                time.sleep(1)
+            else:
+                print(f"[→] Skipping {g['name']} (already has report)")
+    else:
+        print("[!] AI provider not available, skipping report generation")
 
     # 3. Rank goalies
+    print("\n[→] Step 3: Ranking goalies...")
     rank_goalies(goalies)
 
     # 4. Save final updated database
     save_goalies(goalies)
-    print("[✓] Black Ops Goalie Scouting completed successfully!")
+    
+    # 5. Generate blog posts
+    if ENABLE_BLOGGING:
+        print("\n[→] Step 4: Generating blog posts...")
+        blog_gen = BlogGenerator(output_dir="blog_posts", ai_provider=ai_provider)
+        blog_files = blog_gen.generate_all_posts(goalies)
+        print(f"[✓] Generated {len(blog_files)} blog posts")
+    
+    # 6. Post to social media
+    if ENABLE_SOCIAL:
+        print("\n[→] Step 5: Posting to social media...")
+        x_poster = XPoster()
+        social_auto = AutomatedSocialMedia(x_poster)
+        posts_made = social_auto.run_automated_posting(goalies, dry_run=SOCIAL_DRY_RUN)
+        print(f"[✓] Social media updates complete")
+    
+    print("\n" + "="*60)
+    print("[✓] Black Ops Goalie Scouting Platform completed successfully!")
+    print("="*60)
+    print(f"\nSummary:")
+    print(f"  Total Goalies: {len(goalies)}")
+    print(f"  Top Prospects: {len([g for g in goalies if g.get('tier') == 'Top Prospect'])}")
+    print(f"  Sleepers: {len([g for g in goalies if g.get('tier') == 'Sleeper'])}")
+    print(f"  Database: {DATA_FILE}")
+    if ENABLE_BLOGGING:
+        print(f"  Blog Posts: blog_posts/")
+    if ENABLE_SOCIAL and not SOCIAL_DRY_RUN:
+        print(f"  Social Posts: {posts_made} made")
+
