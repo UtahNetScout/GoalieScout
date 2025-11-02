@@ -29,6 +29,7 @@ DATA_FILE = Path("goalies_data.json")
 
 # League URLs for automatic scraping (replace with real URLs)
 LEAGUES = {
+    # Original 9 leagues
     "USHL": "https://www.ushl.com/roster",
     "NCAA D1": "https://www.ncaa.com/stats/hockey-men/d1",
     "CHL/OHL": "https://www.ontariohockeyleague.com/roster",
@@ -37,7 +38,15 @@ LEAGUES = {
     "Liiga": "https://liiga.fi/roster",
     "Czech Extraliga": "https://www.hokej.cz/roster",
     "KHL": "https://en.khl.ru/teams/",
-    "EIHL": "https://www.eliteleague.co.uk/roster"
+    "EIHL": "https://www.eliteleague.co.uk/roster",
+    
+    # NEW: 6 Additional leagues
+    "QMJHL": "https://www.theqmjhl.ca/roster",
+    "WHL": "https://whl.ca/roster",
+    "ECHL": "https://www.echl.com/stats/goalie-stats",
+    "AHL": "https://theahl.com/stats/goalie-stats",
+    "USPORTS": "https://usports.ca/sports/mhockey/stats",
+    "NAHL": "https://www.na3hl.com/stats/goalie-stats"
 }
 
 # -----------------------------
@@ -204,16 +213,64 @@ if __name__ == "__main__":
     goalies = load_goalies()
     print(f"[✓] Loaded {len(goalies)} goalies")
 
-    # 1. Auto scrape all leagues
-    print("\n[→] Step 1: Scraping leagues...")
+    # 1. Auto scrape all leagues AND discover new goalies
+    print("\n[→] Step 1: Scraping leagues and discovering new goalies...")
+    from injury_tracking import NewGoalieFinder, InjuryTracker
+    
+    new_goalie_finder = NewGoalieFinder()
+    injury_tracker = InjuryTracker()
+    
+    initial_count = len(goalies)
+    
     for league_name, url in LEAGUES.items():
         print(f"[→] Scraping {league_name}...")
+        
+        # Original scraping (updates existing goalies)
         scrape_league(url, league_name)
+        
+        # NEW: Discover new goalies not in database
+        print(f"[→] Discovering new goalies in {league_name}...")
+        new_discoveries = new_goalie_finder.discover_new_goalies_from_roster(
+            url, league_name, goalies
+        )
+        
+        if new_discoveries:
+            goalies.extend(new_discoveries)
+            print(f"[✓] Found {len(new_discoveries)} new goalie(s) in {league_name}")
+        
         time.sleep(2)
 
-    # Reload updated goalies
+    # Reload updated goalies and save discoveries
     goalies = load_goalies()
+    new_count = len(goalies) - initial_count
+    
+    if new_count > 0:
+        print(f"[✓] Discovered {new_count} NEW goalies!")
+        save_goalies(goalies)
+    
     print(f"[✓] Total goalies after scraping: {len(goalies)}")
+    
+    # 1b. Add injury information to all goalies
+    print("\n[→] Step 1b: Collecting injury information...")
+    ENABLE_INJURY_TRACKING = os.getenv("ENABLE_INJURY_TRACKING", "true").lower() == "true"
+    
+    if ENABLE_INJURY_TRACKING:
+        for g in goalies:
+            print(f"[→] Checking injury status for {g['name']}")
+            
+            # Add injury tracking data
+            injury_info = injury_tracker.scrape_injury_info(
+                g.get("name", ""),
+                g.get("league", "")
+            )
+            g = injury_tracker.add_injury_record(g, injury_info)
+            
+            # Get injury summary for display
+            summary = injury_tracker.get_injury_summary(g)
+            print(f"    {summary}")
+        
+        print(f"[✓] Injury tracking added for all goalies")
+        save_goalies(goalies)
 
     # 2. Generate AI scouting reports
     print("\n[→] Step 2: Generating AI scouting reports...")
@@ -259,11 +316,46 @@ if __name__ == "__main__":
     else:
         print("[!] AI provider not available, skipping report generation")
 
-    # 3. Rank goalies
-    print("\n[→] Step 3: Ranking goalies...")
+    # 3. Enhanced data collection and analysis
+    print("\n[→] Step 3: Enhanced data collection...")
+    from enhanced_data import EnhancedDataCollector, TrendAnalyzer, TeamFitAnalyzer, InjuryRiskPredictor
+    from nhl_comparison import NHLGoalieComparator
+    
+    ENABLE_ENHANCED_DATA = os.getenv("ENABLE_ENHANCED_DATA", "true").lower() == "true"
+    
+    if ENABLE_ENHANCED_DATA:
+        data_collector = EnhancedDataCollector()
+        nhl_comparator = NHLGoalieComparator()
+        trend_analyzer = TrendAnalyzer()
+        team_fit_analyzer = TeamFitAnalyzer()
+        injury_predictor = InjuryRiskPredictor()
+        
+        for g in goalies:
+            print(f"[→] Enhancing data for {g['name']}")
+            
+            # Add enhanced data collection
+            g = data_collector.enhance_goalie_data(g)
+            
+            # Add NHL goalie comparison
+            g = nhl_comparator.add_comparison_to_goalie(g)
+            
+            # Add trend analysis (placeholder - would need historical data)
+            # g["trend_analysis"] = trend_analyzer.analyze_trend(g, [g.get("ai_score", 75)])
+            
+            # Add team fit analysis
+            g["team_fit"] = team_fit_analyzer.analyze_team_fit(g)
+            
+            # Add injury risk prediction
+            g["injury_risk"] = injury_predictor.predict_injury_risk(g)
+        
+        print(f"[✓] Enhanced data added for all goalies")
+        save_goalies(goalies)  # Save after enhancements
+    
+    # 4. Rank goalies
+    print("\n[→] Step 4: Ranking goalies...")
     rank_goalies(goalies)
 
-    # 4. Save final updated database
+    # 5. Save final updated database
     save_goalies(goalies)
     
     # 5. Generate blog posts

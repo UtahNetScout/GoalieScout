@@ -86,11 +86,29 @@ class BlogGenerator:
 **AI Score:** {goalie.get('ai_score', 0)}/100  
 **Tier:** {goalie.get('tier', 'Unknown')}  
 **Country:** {goalie.get('country', 'Unknown')}  
-
-{goalie.get('notes', 'No scouting notes available.')}
-
----
 """
+            
+            # Add injury status if available
+            injury_data = goalie.get('injury_data', {})
+            if injury_data:
+                current_injury = injury_data.get('current_injury')
+                if current_injury:
+                    content += f"**Injury Status:** Currently injured ({current_injury.get('type', 'Unknown')})\n"
+                else:
+                    content += f"**Injury Status:** Healthy\n"
+                
+                rating = injury_data.get('injury_prone_rating', 'Unknown')
+                content += f"**Injury History:** {rating} risk\n"
+            
+            content += f"\n{goalie.get('notes', 'No scouting notes available.')}\n"
+            
+            # Add NHL comparison if available
+            from nhl_comparison import format_comparison_for_blog
+            nhl_comp = goalie.get('nhl_comparison')
+            if nhl_comp and nhl_comp.get('primary_comparison'):
+                content += format_comparison_for_blog(nhl_comp)
+            
+            content += "\n---\n"
         
         tags = ["goalie prospects", "hockey", "scouting", "AI analysis"]
         return BlogPost(title, content, tags)
