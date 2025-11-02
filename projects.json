@@ -7,14 +7,6 @@
       "date_created": "2024-01-15",
       "status": "completed",
       "goalies_scouted": 12
-    },
-    {
-      "id": 2,
-      "name": "2025 High School Scouting",
-      "description": "Evaluating goalie prospects for high school teams",
-      "date_created": "2025-11-02",
-      "status": "active",
-      "goalies_scouted": 0
     }
   ]
 }
