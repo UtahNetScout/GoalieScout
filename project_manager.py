@@ -17,14 +17,23 @@ def load_projects():
     if not os.path.exists(PROJECTS_FILE):
         return {"projects": []}
     
-    with open(PROJECTS_FILE, 'r') as f:
-        return json.load(f)
+    try:
+        with open(PROJECTS_FILE, 'r') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"Error reading projects file: {e}")
+        print("Starting with empty project list.")
+        return {"projects": []}
 
 
 def save_projects(data):
     """Save projects to the JSON file."""
-    with open(PROJECTS_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
+    try:
+        with open(PROJECTS_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+    except IOError as e:
+        print(f"Error saving projects file: {e}")
+        print("Changes were not saved.")
 
 
 def list_projects():
@@ -75,7 +84,13 @@ def view_project(project_id):
     data = load_projects()
     projects = data.get("projects", [])
     
-    project = next((p for p in projects if p['id'] == int(project_id)), None)
+    try:
+        project_id_int = int(project_id)
+    except ValueError:
+        print(f"Error: '{project_id}' is not a valid project ID. Please provide a numeric ID.")
+        return
+    
+    project = next((p for p in projects if p['id'] == project_id_int), None)
     
     if not project:
         print(f"Project with ID {project_id} not found.")
