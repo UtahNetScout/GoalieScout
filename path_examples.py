@@ -5,14 +5,15 @@ This script demonstrates the correct way to handle file paths in Python,
 especially addressing the common error with backslashes in Windows paths.
 
 THE PROBLEM:
-When you try to use a Windows path like:
+When you try to copy a Windows shell command like:
     cd Desktop\GoalieScout-copilot-check-past-projects
     
-directly in Python, the backslash (\) is treated as an escape character.
+into Python code (which you should NOT do - this is a shell command, not Python!),
+the backslash (\) is treated as an escape character.
 Python sees \G and tries to interpret it as an escape sequence, which causes
 an error because \G is not a valid escape sequence.
 
-SOLUTIONS:
+SOLUTIONS (for working with paths in Python):
 """
 
 import os

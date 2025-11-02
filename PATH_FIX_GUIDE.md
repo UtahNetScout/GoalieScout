@@ -71,10 +71,12 @@ os.chdir("Desktop/GoalieScout-copilot-check-past-projects")
 
 | What You're Trying to Do | Python Code |
 |--------------------------|-------------|
-| Store a path in a variable | `path = r"Desktop\GoalieScout-copilot-check-past-projects"` |
+| Store a path in a variable | `path = "Desktop/GoalieScout-copilot-check-past-projects"` |
 | Change directory | `import os`<br>`os.chdir("Desktop/GoalieScout-copilot-check-past-projects")` |
 | Check if path exists | `import os`<br>`os.path.exists("Desktop/GoalieScout-copilot-check-past-projects")` |
 | List files in directory | `import os`<br>`files = os.listdir("Desktop/GoalieScout-copilot-check-past-projects")` |
+
+*Note: These examples use forward slashes for cross-platform compatibility. You can also use raw strings with backslashes like `r"Desktop\GoalieScout-copilot-check-past-projects"` on Windows.*
 
 ## Running the Example Script
 
