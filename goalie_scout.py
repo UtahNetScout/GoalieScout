@@ -6,6 +6,9 @@ Features:
 - AI scouting report generation via OpenAI
 - Automatic goalie rankings
 - Updates a single JSON database
+
+NOTE: This script uses OpenAI API v0.28.1. For newer versions (1.0.0+),
+update the API calls to use the new client pattern.
 """
 
 import requests
@@ -15,6 +18,7 @@ from pathlib import Path
 import openai
 import time
 import os
+import re
 
 # -----------------------------
 # CONFIGURATION
@@ -70,20 +74,35 @@ def scrape_league(url, league_name):
     Generic example scraper (update selectors per league)
     """
     try:
-        res = requests.get(url)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        res = requests.get(url, timeout=10, headers=headers)
         soup = BeautifulSoup(res.text, "html.parser")
         goalies = load_goalies()
         added = 0
 
         for goalie in soup.select(".goalie-row"):
+            # Safely extract data with null checks
+            name_elem = goalie.select_one(".name")
+            team_elem = goalie.select_one(".team")
+            country_elem = goalie.select_one(".country")
+            dob_elem = goalie.select_one(".dob")
+            height_elem = goalie.select_one(".height")
+            weight_elem = goalie.select_one(".weight")
+            
+            # Skip if required fields are missing
+            if not all([name_elem, team_elem, country_elem]):
+                continue
+            
             player = {
-                "name": goalie.select_one(".name").text.strip(),
-                "team": goalie.select_one(".team").text.strip(),
+                "name": name_elem.text.strip(),
+                "team": team_elem.text.strip(),
                 "league": league_name,
-                "country": goalie.select_one(".country").text.strip(),
-                "dob": goalie.select_one(".dob").text.strip(),
-                "height": int(goalie.select_one(".height").text.strip()),
-                "weight": int(goalie.select_one(".weight").text.strip()),
+                "country": country_elem.text.strip(),
+                "dob": dob_elem.text.strip() if dob_elem else "Unknown",
+                "height": int(height_elem.text.strip()) if height_elem and height_elem.text.strip().isdigit() else 0,
+                "weight": int(weight_elem.text.strip()) if weight_elem and weight_elem.text.strip().isdigit() else 0,
                 "status": "Active",
                 "ai_score": 0,
                 "tier": "Unknown",
@@ -105,6 +124,8 @@ def scrape_league(url, league_name):
 # AI SCOUTING REPORT FUNCTION
 # -----------------------------
 def generate_ai_report(goalie):
+    import re
+    
     prompt = f"""
     Write a concise professional scouting report for {goalie['name']}, 
     including strengths, weaknesses, comparable NHL goalies, and tier 
@@ -119,22 +140,31 @@ def generate_ai_report(goalie):
         report = response.choices[0].message.content
         goalie["notes"] = report
 
-        # Auto-assign tier and score
-        if "Top Prospect" in report:
+        # Auto-assign tier and score using flexible pattern matching
+        report_lower = report.lower()
+        if "top prospect" in report_lower:
             goalie["tier"] = "Top Prospect"
             goalie["ai_score"] = 90
-        elif "Sleeper" in report:
+        elif "sleeper" in report_lower:
             goalie["tier"] = "Sleeper"
             goalie["ai_score"] = 75
-        elif "Watch" in report:
+        elif "watch" in report_lower:
             goalie["tier"] = "Watch"
             goalie["ai_score"] = 65
-        elif "Red Flag" in report:
+        elif "red flag" in report_lower:
             goalie["tier"] = "Red Flag"
             goalie["ai_score"] = 50
         else:
             goalie["tier"] = "Unknown"
             goalie["ai_score"] = 60
+        
+        # Try to extract numeric score from report
+        score_match = re.search(r'\b(\d{1,3})\b', report)
+        if score_match:
+            extracted_score = int(score_match.group(1))
+            if 0 <= extracted_score <= 100:
+                goalie["ai_score"] = extracted_score
+                
     except Exception as e:
         print(f"[!] AI report failed for {goalie['name']}: {e}")
 
