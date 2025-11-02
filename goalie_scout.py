@@ -40,13 +40,16 @@ LEAGUES = {
     "KHL": "https://en.khl.ru/teams/",
     "EIHL": "https://www.eliteleague.co.uk/roster",
     
-    # NEW: 6 Additional leagues
+    # 6 Additional leagues
     "QMJHL": "https://www.theqmjhl.ca/roster",
     "WHL": "https://whl.ca/roster",
     "ECHL": "https://www.echl.com/stats/goalie-stats",
     "AHL": "https://theahl.com/stats/goalie-stats",
     "USPORTS": "https://usports.ca/sports/mhockey/stats",
-    "NAHL": "https://www.na3hl.com/stats/goalie-stats"
+    "NAHL": "https://www.na3hl.com/stats/goalie-stats",
+    
+    # NEW: League #16 - MaxPreps High School Hockey
+    "MaxPreps HS": "https://www.maxpreps.com/high-schools/hockey/"
 }
 
 # -----------------------------
@@ -216,6 +219,7 @@ if __name__ == "__main__":
     # 1. Auto scrape all leagues AND discover new goalies
     print("\n[→] Step 1: Scraping leagues and discovering new goalies...")
     from injury_tracking import NewGoalieFinder, InjuryTracker
+    from maxpreps_scraper import integrate_maxpreps_into_platform
     
     new_goalie_finder = NewGoalieFinder()
     injury_tracker = InjuryTracker()
@@ -223,6 +227,18 @@ if __name__ == "__main__":
     initial_count = len(goalies)
     
     for league_name, url in LEAGUES.items():
+        # Special handling for MaxPreps high school hockey
+        if league_name == "MaxPreps HS":
+            print(f"\n[→] Special MaxPreps High School Discovery...")
+            ENABLE_MAXPREPS = os.getenv("ENABLE_MAXPREPS", "true").lower() == "true"
+            
+            if ENABLE_MAXPREPS:
+                goalies = integrate_maxpreps_into_platform(goalies)
+                save_goalies(goalies)
+            else:
+                print("[!] MaxPreps integration disabled. Set ENABLE_MAXPREPS=true to enable")
+            continue
+        
         print(f"[→] Scraping {league_name}...")
         
         # Original scraping (updates existing goalies)
