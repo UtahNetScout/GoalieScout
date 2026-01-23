@@ -1,6 +1,46 @@
-## Black Ops Goalie Scouting Platform
+# GoalieScout
 
-An all-in-one **100% AI-automated** hockey goalie scouting platform leveraging generative AI engineering for advanced scouting, ranking, and performance analysis. Covers over 20 international leagues and revolutionizes sports analytics with cutting-edge automation and multi-league expertise.
+An all-in-one **AI-automated** hockey scouting platform leveraging generative AI engineering for advanced scouting, ranking, and performance analysis.
+
+## 🎉 NEW: Big Data Cup 2026 Edition
+
+**GoalieScout-BDC-2026** is now available! This adaptation extends the original GoalieScout framework for the **Stathletes Big Data Cup 2026** competition, focusing on the "Player Movement" theme.
+
+### 🆕 What's New in BDC-2026 Edition?
+
+- **All Positions**: Expanded from goalies-only to forwards, defensemen, and goalies
+- **Movement Analytics**: Advanced player movement metrics (speed, distance, positioning)
+- **BDC 2026 Data**: Direct support for Big Data Cup 2026 tracking dataset
+- **Enhanced Visualizations**: Trajectory plots, heatmaps, and comparison charts
+- **Position-Specific Metrics**: 
+  - Forwards: High-danger positioning, on-puck carrying
+  - Defensemen: Gap control, zone transitions
+  - Goalies: Crease depth, lateral movement
+
+### 📚 Documentation
+
+- **[README_BDC_2026.md](README_BDC_2026.md)** - Complete BDC 2026 edition documentation
+- **[USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)** - Practical usage examples and tutorials
+
+### 🚀 Quick Start (BDC 2026)
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure (uses Ollama by default - free!)
+cp .env.example .env
+
+# Run with sample data
+python player_movement_scout.py
+
+# Or test the system
+python test_system.py
+```
+
+---
+
+## ✨ Original GoalieScout Framework
 
 ## ✨ Key Features
 
@@ -29,5 +69,38 @@ A robust pipeline ensures capturing parameters such as:
 - Robust database objects validate daily updates.
 
 ## 🚀 Usage Best Practices
-- Details Guide Sample CLI provisioning installation.
-**Users auto steps simplification menus cmd GUIs debugging setups**. Targets advanced-develop intern hosting auditing scoreboard validators exporter writes monitoring contributes.json.optimizations.md validations headcodes,realties.end.
+- See [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md) for detailed usage examples
+- For BDC 2026 specific usage, see [README_BDC_2026.md](README_BDC_2026.md)
+
+## 🏗️ Project Structure
+
+```
+GoalieScout/
+├── player_movement_scout.py    # Main BDC 2026 analysis script
+├── test_system.py               # Test suite
+├── requirements.txt             # Dependencies
+├── .env.example                 # Configuration template
+├── README.md                    # This file
+├── README_BDC_2026.md          # BDC 2026 documentation
+├── USAGE_EXAMPLES.md           # Usage examples
+├── src/                         # Source code
+│   ├── ai_providers/           # AI provider implementations
+│   ├── data/                   # Data loading
+│   ├── metrics/                # Movement metrics
+│   ├── reports/                # Report generation
+│   └── visualization/          # Plotting
+├── sample_data/                 # Data directory
+└── output/                      # Generated reports
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! This project is designed to be modular and extensible.
+
+## 📝 License
+
+See the repository for license information.
+
+## 🏆 Big Data Cup 2026
+
+This project includes an adaptation for the Stathletes Big Data Cup 2026 competition. Learn more at the [official BDC repository](https://github.com/bigdatacup/Big-Data-Cup-2026).
