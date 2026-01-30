@@ -1,5 +1,7 @@
 # GoalieScout-BDC-2026 Usage Examples
 
+> **Repository:** [github.com/UtahNetScout/GoalieScout-BDC-2026](https://github.com/UtahNetScout/GoalieScout-BDC-2026)
+
 This document provides practical examples of using the GoalieScout-BDC-2026 system.
 
 ## Quick Start
@@ -8,8 +10,8 @@ This document provides practical examples of using the GoalieScout-BDC-2026 syst
 
 ```bash
 # Clone the repository
-git clone https://github.com/UtahNetScout/GoalieScout.git
-cd GoalieScout
+git clone https://github.com/UtahNetScout/GoalieScout-BDC-2026.git
+cd GoalieScout-BDC-2026
 
 # Install dependencies
 pip install -r requirements.txt

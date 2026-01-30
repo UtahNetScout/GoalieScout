@@ -4,7 +4,29 @@ An all-in-one **AI-automated** hockey scouting platform leveraging generative AI
 
 ## 🎉 NEW: Big Data Cup 2026 Edition
 
-**GoalieScout-BDC-2026** is now available! This adaptation extends the original GoalieScout framework for the **Stathletes Big Data Cup 2026** competition, focusing on the "Player Movement" theme.
+**GoalieScout-BDC-2026** is now available as a separate repository! This adaptation extends the original GoalieScout framework for the **Stathletes Big Data Cup 2026** competition, focusing on the "Player Movement" theme.
+
+### 🔗 New Dedicated Repository
+
+The BDC 2026 project has been moved to its own repository:
+
+**➡️ [GoalieScout-BDC-2026](https://github.com/UtahNetScout/GoalieScout-BDC-2026)**
+
+```bash
+git clone https://github.com/UtahNetScout/GoalieScout-BDC-2026.git
+```
+
+### 📦 Migration Information
+
+If you're working with the code in this repository and want to transfer it to the new GoalieScout-BDC-2026 repository, see:
+- **[MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)** - Complete migration instructions
+- **[QUICK_MIGRATION.md](QUICK_MIGRATION.md)** - Fast 3-minute migration guide
+- **[FILE_MANIFEST.md](FILE_MANIFEST.md)** - Complete file inventory
+
+Or use the automated migration script:
+```bash
+./migrate_to_new_repo.sh
+```
 
 ### 🆕 What's New in BDC-2026 Edition?
 

@@ -1,12 +1,14 @@
 # GoalieScout-BDC-2026 Quick Start Guide
 
+> **Repository:** [github.com/UtahNetScout/GoalieScout-BDC-2026](https://github.com/UtahNetScout/GoalieScout-BDC-2026)
+
 Get up and running in 5 minutes!
 
 ## Step 1: Clone and Install (2 minutes)
 
 ```bash
-git clone https://github.com/UtahNetScout/GoalieScout.git
-cd GoalieScout
+git clone https://github.com/UtahNetScout/GoalieScout-BDC-2026.git
+cd GoalieScout-BDC-2026
 pip install -r requirements.txt
 ```
 

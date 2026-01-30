@@ -1,8 +1,16 @@
 # GoalieScout-BDC-2026: Player Movement Scout
 
+> **Note:** This project is now maintained in a dedicated repository at: **[GoalieScout-BDC-2026](https://github.com/UtahNetScout/GoalieScout-BDC-2026)**
+
 **An AI-powered hockey player movement analysis platform adapted for the Stathletes Big Data Cup 2026.**
 
 This project extends the GoalieScout framework to analyze player movement across **all positions** (goalies, forwards, defensemen) using advanced tracking data from the Big Data Cup 2026 competition, with a focus on the "Player Movement" theme.
+
+## 🔗 Repository Information
+
+- **New Dedicated Repository:** [github.com/UtahNetScout/GoalieScout-BDC-2026](https://github.com/UtahNetScout/GoalieScout-BDC-2026)
+- **Clone Command:** `git clone https://github.com/UtahNetScout/GoalieScout-BDC-2026.git`
+- **Migration Guide:** See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for transfer instructions
 
 ## 🎯 Overview
 
@@ -56,8 +64,8 @@ GoalieScout-BDC-2026 is a comprehensive scouting platform that:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/UtahNetScout/GoalieScout.git
-   cd GoalieScout
+   git clone https://github.com/UtahNetScout/GoalieScout-BDC-2026.git
+   cd GoalieScout-BDC-2026
    ```
 
 2. **Install dependencies**
