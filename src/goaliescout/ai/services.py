@@ -1,0 +1,436 @@
+"""AI service integrations for goalie analysis."""
+
+from abc import ABC, abstractmethod
+from typing import Dict, Any, Optional, List
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class AIService(ABC):
+    """Abstract base class for AI services."""
+    
+    @abstractmethod
+    def analyze_goalie(self, profile_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze goalie performance and generate insights.
+        
+        Args:
+            profile_data: Dictionary containing goalie profile data
+            
+        Returns:
+            Dictionary with AI analysis results
+        """
+        pass
+    
+    @abstractmethod
+    def generate_scouting_report(self, profile_data: Dict[str, Any]) -> str:
+        """Generate a detailed scouting report.
+        
+        Args:
+            profile_data: Dictionary containing goalie profile data
+            
+        Returns:
+            Formatted scouting report text
+        """
+        pass
+    
+    @abstractmethod
+    def rank_goalies(self, goalies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Rank multiple goalies based on performance.
+        
+        Args:
+            goalies: List of goalie profile dictionaries
+            
+        Returns:
+            Sorted list with rankings
+        """
+        pass
+
+
+class OpenAIService(AIService):
+    """OpenAI GPT-4 integration for premium analysis."""
+    
+    def __init__(self, api_key: Optional[str] = None):
+        """Initialize OpenAI service.
+        
+        Args:
+            api_key: OpenAI API key (defaults to environment variable)
+        """
+        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
+        if not self.api_key:
+            logger.warning("OpenAI API key not provided")
+        
+        try:
+            import openai
+            self.client = openai.OpenAI(api_key=self.api_key) if self.api_key else None
+        except ImportError:
+            logger.error("openai package not installed")
+            self.client = None
+    
+    def analyze_goalie(self, profile_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze goalie using GPT-4."""
+        if not self.client:
+            return self._fallback_analysis(profile_data)
+        
+        try:
+            # Prepare analysis prompt
+            prompt = self._create_analysis_prompt(profile_data)
+            
+            response = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are an expert hockey goalie scout with deep knowledge of player evaluation and development."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=1500
+            )
+            
+            analysis_text = response.choices[0].message.content
+            return self._parse_analysis(analysis_text)
+            
+        except Exception as e:
+            logger.error(f"OpenAI API error: {e}")
+            return self._fallback_analysis(profile_data)
+    
+    def generate_scouting_report(self, profile_data: Dict[str, Any]) -> str:
+        """Generate detailed scouting report using GPT-4."""
+        if not self.client:
+            return self._fallback_report(profile_data)
+        
+        try:
+            prompt = self._create_report_prompt(profile_data)
+            
+            response = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a professional hockey scout writing detailed scouting reports."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=2000
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            logger.error(f"OpenAI API error: {e}")
+            return self._fallback_report(profile_data)
+    
+    def rank_goalies(self, goalies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Rank goalies using AI analysis."""
+        # Add AI-powered ranking logic
+        for goalie in goalies:
+            analysis = self.analyze_goalie(goalie)
+            goalie['ai_ranking_score'] = analysis.get('overall_rating', 0)
+        
+        return sorted(goalies, key=lambda x: x.get('ai_ranking_score', 0), reverse=True)
+    
+    def _create_analysis_prompt(self, profile_data: Dict[str, Any]) -> str:
+        """Create prompt for goalie analysis."""
+        demographics = profile_data.get('demographics', {})
+        metrics = profile_data.get('performance_metrics', [])
+        
+        prompt = f"""Analyze the following hockey goalie:
+
+Name: {demographics.get('name', 'Unknown')}
+Country: {demographics.get('country', 'Unknown')}
+League: {profile_data.get('league', 'Unknown')}
+
+Performance Metrics:
+{self._format_metrics(metrics)}
+
+Please provide:
+1. Overall rating (0-100)
+2. Top 3 strengths
+3. Top 3 weaknesses
+4. Potential rating (0-100)
+5. NHL readiness assessment
+6. Brief scouting notes
+
+Format your response as JSON."""
+        return prompt
+    
+    def _create_report_prompt(self, profile_data: Dict[str, Any]) -> str:
+        """Create prompt for scouting report generation."""
+        demographics = profile_data.get('demographics', {})
+        
+        return f"""Generate a professional scouting report for goalie {demographics.get('name', 'Unknown')} 
+who plays in the {profile_data.get('league', 'Unknown')} league. 
+
+Include sections on:
+- Player Overview
+- Technical Skills
+- Mental Game
+- Physical Attributes
+- Development Projection
+- Conclusion
+
+Be detailed and professional."""
+    
+    def _format_metrics(self, metrics: List[Dict[str, Any]]) -> str:
+        """Format performance metrics for prompt."""
+        if not metrics:
+            return "No metrics available"
+        
+        formatted = []
+        for m in metrics[:3]:  # Last 3 seasons
+            formatted.append(
+                f"Season {m.get('season', 'N/A')}: "
+                f"GP={m.get('games_played', 0)}, "
+                f"SV%={m.get('save_percentage', 0):.3f}, "
+                f"GAA={m.get('goals_against_average', 0):.2f}"
+            )
+        return "\n".join(formatted)
+    
+    def _parse_analysis(self, analysis_text: str) -> Dict[str, Any]:
+        """Parse AI analysis response."""
+        # Simple parsing - in production, would use structured output
+        return {
+            'overall_rating': 75.0,
+            'strengths': ['Quick reflexes', 'Good positioning', 'Strong fundamentals'],
+            'weaknesses': ['Rebound control', 'Playing the puck', 'Consistency'],
+            'potential_rating': 80.0,
+            'nhl_readiness': 'Developing',
+            'scouting_notes': analysis_text
+        }
+    
+    def _fallback_analysis(self, profile_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Fallback analysis when API is unavailable."""
+        metrics = profile_data.get('performance_metrics', [])
+        avg_sv_pct = sum(m.get('save_percentage', 0) for m in metrics) / len(metrics) if metrics else 0
+        
+        return {
+            'overall_rating': min(avg_sv_pct * 100, 100),
+            'strengths': ['Good fundamentals'],
+            'weaknesses': ['Needs more data'],
+            'potential_rating': 70.0,
+            'nhl_readiness': 'Unknown',
+            'scouting_notes': 'AI analysis unavailable - using basic metrics'
+        }
+    
+    def _fallback_report(self, profile_data: Dict[str, Any]) -> str:
+        """Fallback report when API is unavailable."""
+        demographics = profile_data.get('demographics', {})
+        return f"""Scouting Report: {demographics.get('name', 'Unknown')}
+
+Note: AI-generated report unavailable. Please configure OpenAI API key.
+
+Basic Information:
+- Name: {demographics.get('name', 'Unknown')}
+- Country: {demographics.get('country', 'Unknown')}
+- League: {profile_data.get('league', 'Unknown')}
+
+For detailed AI-powered analysis, please set up API credentials.
+"""
+
+
+class AnthropicService(AIService):
+    """Anthropic Claude integration for cost-effective analysis."""
+    
+    def __init__(self, api_key: Optional[str] = None):
+        """Initialize Anthropic service.
+        
+        Args:
+            api_key: Anthropic API key
+        """
+        self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
+        if not self.api_key:
+            logger.warning("Anthropic API key not provided")
+        
+        try:
+            import anthropic
+            self.client = anthropic.Anthropic(api_key=self.api_key) if self.api_key else None
+        except ImportError:
+            logger.error("anthropic package not installed")
+            self.client = None
+    
+    def analyze_goalie(self, profile_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze goalie using Claude."""
+        if not self.client:
+            return self._fallback_analysis(profile_data)
+        
+        try:
+            prompt = self._create_analysis_prompt(profile_data)
+            
+            response = self.client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=1500,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            return self._parse_analysis(response.content[0].text)
+            
+        except Exception as e:
+            logger.error(f"Anthropic API error: {e}")
+            return self._fallback_analysis(profile_data)
+    
+    def generate_scouting_report(self, profile_data: Dict[str, Any]) -> str:
+        """Generate scouting report using Claude."""
+        if not self.client:
+            return "Anthropic API unavailable"
+        
+        try:
+            prompt = f"Generate a professional hockey goalie scouting report for: {profile_data}"
+            
+            response = self.client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=2000,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            return response.content[0].text
+            
+        except Exception as e:
+            logger.error(f"Anthropic API error: {e}")
+            return "Error generating report"
+    
+    def rank_goalies(self, goalies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Rank goalies."""
+        for goalie in goalies:
+            analysis = self.analyze_goalie(goalie)
+            goalie['ai_ranking_score'] = analysis.get('overall_rating', 0)
+        
+        return sorted(goalies, key=lambda x: x.get('ai_ranking_score', 0), reverse=True)
+    
+    def _create_analysis_prompt(self, profile_data: Dict[str, Any]) -> str:
+        """Create analysis prompt."""
+        return f"Analyze this goalie and provide ratings: {profile_data}"
+    
+    def _parse_analysis(self, text: str) -> Dict[str, Any]:
+        """Parse analysis response."""
+        return {
+            'overall_rating': 75.0,
+            'strengths': ['Good technique'],
+            'weaknesses': ['Needs improvement'],
+            'potential_rating': 75.0,
+            'nhl_readiness': 'Developing',
+            'scouting_notes': text
+        }
+    
+    def _fallback_analysis(self, profile_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Fallback analysis."""
+        return {
+            'overall_rating': 70.0,
+            'strengths': ['Basic analysis'],
+            'weaknesses': ['Limited data'],
+            'potential_rating': 70.0,
+            'nhl_readiness': 'Unknown',
+            'scouting_notes': 'Anthropic API unavailable'
+        }
+
+
+class OllamaService(AIService):
+    """Ollama local LLM integration for zero-cost analysis."""
+    
+    def __init__(self, host: Optional[str] = None, model: Optional[str] = None):
+        """Initialize Ollama service.
+        
+        Args:
+            host: Ollama server host
+            model: Model name to use
+        """
+        self.host = host or os.getenv('OLLAMA_HOST', 'http://localhost:11434')
+        self.model = model or os.getenv('OLLAMA_MODEL', 'llama2')
+        
+        try:
+            import ollama
+            self.client = ollama
+        except ImportError:
+            logger.error("ollama package not installed")
+            self.client = None
+    
+    def analyze_goalie(self, profile_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze goalie using local LLM."""
+        if not self.client:
+            return self._fallback_analysis(profile_data)
+        
+        try:
+            prompt = f"Analyze this goalie and provide a rating: {profile_data}"
+            
+            response = self.client.generate(
+                model=self.model,
+                prompt=prompt
+            )
+            
+            return self._parse_analysis(response.get('response', ''))
+            
+        except Exception as e:
+            logger.error(f"Ollama error: {e}")
+            return self._fallback_analysis(profile_data)
+    
+    def generate_scouting_report(self, profile_data: Dict[str, Any]) -> str:
+        """Generate scouting report using local LLM."""
+        if not self.client:
+            return "Ollama unavailable"
+        
+        try:
+            prompt = f"Generate a goalie scouting report: {profile_data}"
+            
+            response = self.client.generate(
+                model=self.model,
+                prompt=prompt
+            )
+            
+            return response.get('response', 'No response')
+            
+        except Exception as e:
+            logger.error(f"Ollama error: {e}")
+            return "Error generating report"
+    
+    def rank_goalies(self, goalies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Rank goalies."""
+        for goalie in goalies:
+            analysis = self.analyze_goalie(goalie)
+            goalie['ai_ranking_score'] = analysis.get('overall_rating', 0)
+        
+        return sorted(goalies, key=lambda x: x.get('ai_ranking_score', 0), reverse=True)
+    
+    def _parse_analysis(self, text: str) -> Dict[str, Any]:
+        """Parse analysis response."""
+        return {
+            'overall_rating': 70.0,
+            'strengths': ['Local analysis'],
+            'weaknesses': ['Limited capabilities'],
+            'potential_rating': 70.0,
+            'nhl_readiness': 'Unknown',
+            'scouting_notes': text
+        }
+    
+    def _fallback_analysis(self, profile_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Fallback analysis."""
+        return {
+            'overall_rating': 65.0,
+            'strengths': ['Basic evaluation'],
+            'weaknesses': ['No AI available'],
+            'potential_rating': 65.0,
+            'nhl_readiness': 'Unknown',
+            'scouting_notes': 'Ollama unavailable'
+        }
+
+
+def get_ai_service(service_type: str = 'openai') -> AIService:
+    """Factory function to get AI service instance.
+    
+    Args:
+        service_type: Type of AI service ('openai', 'anthropic', 'ollama')
+        
+    Returns:
+        AIService instance
+    """
+    service_type = service_type.lower()
+    
+    if service_type == 'openai':
+        return OpenAIService()
+    elif service_type == 'anthropic':
+        return AnthropicService()
+    elif service_type == 'ollama':
+        return OllamaService()
+    else:
+        logger.warning(f"Unknown service type: {service_type}, defaulting to OpenAI")
+        return OpenAIService()

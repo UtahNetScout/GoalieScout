@@ -1,0 +1,81 @@
+{
+  "goalies": [
+    {
+      "player_id": "john_smith",
+      "demographics": {
+        "name": "John Smith",
+        "country": "Canada",
+        "date_of_birth": "2004-03-15",
+        "height": "6'2\"",
+        "weight": "195 lbs",
+        "catches": "L"
+      },
+      "league": "NCAA",
+      "position": "Goalie",
+      "current_team": "University of Michigan",
+      "performance_metrics": [
+        {
+          "games_played": 25,
+          "wins": 18,
+          "losses": 5,
+          "overtime_losses": 2,
+          "save_percentage": 0.925,
+          "goals_against_average": 2.15,
+          "shutouts": 4,
+          "goals_against": 54,
+          "saves": 675,
+          "shots_against": 729,
+          "minutes_played": 1500.0,
+          "season": "2023-24"
+        },
+        {
+          "games_played": 22,
+          "wins": 14,
+          "losses": 7,
+          "overtime_losses": 1,
+          "save_percentage": 0.915,
+          "goals_against_average": 2.45,
+          "shutouts": 2,
+          "goals_against": 54,
+          "saves": 582,
+          "shots_against": 636,
+          "minutes_played": 1320.0,
+          "season": "2022-23"
+        }
+      ],
+      "injury_history": [],
+      "nhl_comparisons": [
+        {
+          "comparable_player": "Connor Hellebuyck",
+          "similarity_score": 78.5,
+          "comparison_notes": "Similar playing style with strong positioning and quick reflexes"
+        }
+      ],
+      "ai_analysis": {
+        "overall_rating": 82.0,
+        "strengths": [
+          "Excellent positioning and angle play",
+          "Quick reflexes in close",
+          "Strong mental game and composure"
+        ],
+        "weaknesses": [
+          "Rebound control needs improvement",
+          "Puck handling could be more confident",
+          "Sometimes overcommits on breakaways"
+        ],
+        "potential_rating": 88.0,
+        "nhl_readiness": "Developing",
+        "scouting_notes": "Smith shows excellent fundamentals and has the tools to be an NHL starter. His positioning is elite for his age, and he rarely gets caught out of position. Main areas for development are puck handling and rebound control. With 2-3 more years of development, could be NHL-ready.",
+        "analysis_date": "2024-01-15T10:30:00",
+        "model_used": "openai"
+      },
+      "last_updated": "2024-01-15T10:30:00",
+      "data_sources": ["manual_entry", "NCAA_stats"]
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "last_updated": "2024-01-15T10:30:00",
+    "total_goalies": 1
+  }
+}
