@@ -402,5 +402,151 @@ def stats(db_path):
         console.print(f"[red]Error getting statistics: {e}[/red]")
 
 
+@main.command()
+@click.option('--db-path', default='./data/goalie_database.json', help='Path to database file')
+@click.option('--source', default=None,
+              type=click.Choice(['nhl', 'moneypuck', 'nst'], case_sensitive=False),
+              help='Sync from a specific source only')
+@click.option('--season', default=None, help='Season to sync (e.g. 20232024)')
+def sync(db_path, source, season):
+    """Run the daily update pipeline to sync goalie data."""
+    from ..scraping.pipeline.daily_update import DailyUpdatePipeline
+    try:
+        db = GoalieDatabase(db_path)
+        sources = [source] if source else None
+        pipeline_kwargs = {"db": db}
+        if season:
+            pipeline_kwargs["season"] = season
+        pipeline = DailyUpdatePipeline(**pipeline_kwargs)
+        console.print(f"[cyan]Running data sync pipeline{f' (source: {source})' if source else ''}...[/cyan]")
+        result = pipeline.run(sources=sources)
+        status_color = "green" if result.success else "yellow"
+        console.print(Panel.fit(
+            f"[{status_color}]Success: {result.success}[/{status_color}]\n"
+            f"Records saved: {result.records_saved}\n"
+            f"Sources: {', '.join(result.sources_attempted)}\n"
+            f"Errors: {len(result.errors)}",
+            title="Sync Complete"
+        ))
+        if result.errors:
+            console.print("\n[bold red]Errors:[/bold red]")
+            for err in result.errors:
+                console.print(f"  [red]✗ {err}[/red]")
+    except Exception as e:
+        console.print(f"[red]Error running sync: {e}[/red]")
+        logger.error(f"Sync error: {e}", exc_info=True)
+
+
+@main.command()
+@click.option('--league', default=None, help='League to scan (e.g. OHL, WHL, NCAA)')
+@click.option('--min-games', default=5, show_default=True, help='Minimum games played to include a goalie')
+@click.option('--season', default=None, help='Season slug (e.g. 2023-2024)')
+@click.option('--db-path', default='./data/goalie_database.json', help='Path to database file')
+def discover(league, min_games, season, db_path):
+    """Run the goalie discovery system to find new prospects."""
+    from ..scraping.pipeline.discovery import GoalieDiscovery
+    from datetime import datetime, timezone
+    try:
+        db = GoalieDatabase(db_path)
+        leagues = [league.lower()] if league else None
+        if not season:
+            now = datetime.now(timezone.utc)
+            year = now.year if now.month >= 10 else now.year - 1
+            season = f"{year}-{year + 1}"
+        discovery = GoalieDiscovery(db=db, min_games=min_games, leagues=leagues)
+        console.print(
+            f"[cyan]Running goalie discovery: league={league or 'all configured'} "
+            f"season={season} min_games={min_games}...[/cyan]"
+        )
+        new_goalies = discovery.run(season)
+        if new_goalies:
+            table = Table(title=f"Newly Discovered Goalies ({len(new_goalies)})")
+            table.add_column("Name", style="cyan")
+            table.add_column("League", style="green")
+            table.add_column("Team", style="yellow")
+            for g in new_goalies:
+                table.add_row(g.get("name", ""), g.get("league", ""), g.get("team", ""))
+            console.print(table)
+        else:
+            console.print("[yellow]No new goalies discovered.[/yellow]")
+    except Exception as e:
+        console.print(f"[red]Error running discovery: {e}[/red]")
+        logger.error(f"Discovery error: {e}", exc_info=True)
+
+
+@main.command(name='pipeline-status')
+def pipeline_status():
+    """Show pipeline health and last run times."""
+    from ..scraping.pipeline.health_check import PipelineHealthCheck
+    try:
+        health = PipelineHealthCheck()
+        summary = health.get_status_summary()
+        console.print(Panel(summary, title="Pipeline Health"))
+    except Exception as e:
+        console.print(f"[red]Error fetching pipeline status: {e}[/red]")
+
+
+@main.command()
+@click.option('--db-path', default='./data/goalie_database.json', help='Path to database file')
+def validate(db_path):
+    """Run data validation checks on the entire database."""
+    from ..scraping.validation.validators import GoalieDataValidator
+    try:
+        db = GoalieDatabase(db_path)
+        goalies = db.get_all_goalies()
+        if not goalies:
+            console.print("[yellow]No goalies in database to validate.[/yellow]")
+            return
+
+        validator = GoalieDataValidator()
+        pass_count = 0
+        fail_count = 0
+        warn_count = 0
+
+        table = Table(title=f"Validation Results ({len(goalies)} goalies)")
+        table.add_column("Name", style="cyan")
+        table.add_column("Status", style="bold")
+        table.add_column("Issues", style="dim")
+
+        for goalie in goalies:
+            record = goalie.to_dict()
+            # Flatten demographics for validation
+            demo = record.get("demographics", {})
+            flat = {**record, **demo}
+            if flat.get("performance_metrics"):
+                metrics = flat["performance_metrics"][0] if flat["performance_metrics"] else {}
+                flat.update(metrics)
+
+            result = validator.validate_record(flat)
+            if result.passed and not result.warnings:
+                status = "[green]✓ PASS[/green]"
+                issues = ""
+                pass_count += 1
+            elif result.warnings and result.passed:
+                status = "[yellow]⚠ WARN[/yellow]"
+                issues = "; ".join(result.warnings[:2])
+                warn_count += 1
+            else:
+                status = "[red]✗ FAIL[/red]"
+                issues = "; ".join(result.errors[:2])
+                fail_count += 1
+
+            table.add_row(
+                goalie.demographics.name,
+                status,
+                issues[:80] if issues else "",
+            )
+
+        console.print(table)
+        console.print(
+            f"\n[green]Pass: {pass_count}[/green]  "
+            f"[yellow]Warn: {warn_count}[/yellow]  "
+            f"[red]Fail: {fail_count}[/red]"
+        )
+    except Exception as e:
+        console.print(f"[red]Error running validation: {e}[/red]")
+        logger.error(f"Validation error: {e}", exc_info=True)
+
+
 if __name__ == '__main__':
     main()
