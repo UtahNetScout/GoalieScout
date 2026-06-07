@@ -128,10 +128,23 @@ class OpenAIService(AIService):
         return sorted(goalies, key=lambda x: x.get('ai_ranking_score', 0), reverse=True)
     
     def _create_analysis_prompt(self, profile_data: Dict[str, Any]) -> str:
-        """Create prompt for goalie analysis."""
+        """Create prompt for goalie analysis including advanced metrics."""
         demographics = profile_data.get('demographics', {})
         metrics = profile_data.get('performance_metrics', [])
-        
+        advanced = profile_data.get('advanced_metrics', {})
+
+        advanced_section = ""
+        if advanced:
+            advanced_section = f"""
+Advanced Analytics:
+- Black Ops Score: {advanced.get('black_ops_score', 'N/A')}
+- GSAx (Goals Saved Above Expected): {advanced.get('gsax', 'N/A')}
+- High-Danger SV%: {advanced.get('hd_sv_pct', 'N/A')}
+- Rebound Control Rate: {advanced.get('controlled_rebound_rate', 'N/A')}
+- Consistency Score: {advanced.get('consistency_score', 'N/A')}
+- Rush Save%: {advanced.get('rush_sv_pct', 'N/A')}
+"""
+
         prompt = f"""Analyze the following hockey goalie:
 
 Name: {demographics.get('name', 'Unknown')}
@@ -140,7 +153,7 @@ League: {profile_data.get('league', 'Unknown')}
 
 Performance Metrics:
 {self._format_metrics(metrics)}
-
+{advanced_section}
 Please provide:
 1. Overall rating (0-100)
 2. Top 3 strengths
@@ -151,14 +164,26 @@ Please provide:
 
 Format your response as JSON."""
         return prompt
-    
+
     def _create_report_prompt(self, profile_data: Dict[str, Any]) -> str:
         """Create prompt for scouting report generation."""
         demographics = profile_data.get('demographics', {})
-        
-        return f"""Generate a professional scouting report for goalie {demographics.get('name', 'Unknown')} 
-who plays in the {profile_data.get('league', 'Unknown')} league. 
+        advanced = profile_data.get('advanced_metrics', {})
 
+        advanced_section = ""
+        if advanced:
+            advanced_section = f"""
+Key Advanced Metrics:
+- Black Ops Score: {advanced.get('black_ops_score', 'N/A')} / 100
+- GSAx: {advanced.get('gsax', 'N/A')} (Goals Saved Above Expected)
+- High-Danger SV%: {advanced.get('hd_sv_pct', 'N/A')}
+- Rebound Control: {advanced.get('controlled_rebound_rate', 'N/A')}
+- Performance Consistency Score: {advanced.get('consistency_score', 'N/A')}
+"""
+
+        return f"""Generate a professional scouting report for goalie {demographics.get('name', 'Unknown')}
+who plays in the {profile_data.get('league', 'Unknown')} league.
+{advanced_section}
 Include sections on:
 - Player Overview
 - Technical Skills
