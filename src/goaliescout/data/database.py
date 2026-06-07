@@ -2,11 +2,12 @@
 
 import json
 import os
+from datetime import datetime
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 import logging
 
-from .models import GoalieProfile
+from .models import Demographics, GoalieProfile, PerformanceMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +81,69 @@ class GoalieDatabase:
         data['goalies'] = goalies
         self._save_data(data)
         return True
+
+    def upsert_goalie_record(self, player_id: str, record: Dict[str, Any]) -> bool:
+        """Create or update a profile from a normalized pipeline record."""
+        existing = self.get_goalie(player_id)
+        source = str(record.get("source", "")).strip()
+
+        if existing is None:
+            existing = GoalieProfile(
+                player_id=player_id,
+                demographics=Demographics(
+                    name=str(record.get("name") or player_id.replace("_", " ").title()),
+                    country=str(record.get("nationality") or record.get("country") or ""),
+                    date_of_birth=str(record.get("dob") or record.get("date_of_birth") or ""),
+                    height=_optional_string(record.get("height") or record.get("height_inches")),
+                    weight=_optional_string(record.get("weight") or record.get("weight_lbs")),
+                    catches=_optional_string(record.get("catches")),
+                ),
+                league=str(record.get("league") or "Unknown"),
+                current_team=_optional_string(record.get("team") or record.get("current_team")),
+            )
+        else:
+            existing.demographics.name = str(record.get("name") or existing.demographics.name)
+            existing.league = str(record.get("league") or existing.league)
+            existing.current_team = _optional_string(
+                record.get("team") or record.get("current_team") or existing.current_team
+            )
+
+        season = _optional_string(record.get("season"))
+        metrics = PerformanceMetrics(
+            games_played=_as_int(record.get("games_played")),
+            wins=_as_int(record.get("wins")),
+            losses=_as_int(record.get("losses")),
+            overtime_losses=_as_int(record.get("overtime_losses")),
+            save_percentage=_as_float(record.get("save_percentage")),
+            goals_against_average=_as_float(record.get("goals_against_average")),
+            shutouts=_as_int(record.get("shutouts")),
+            goals_against=_as_int(record.get("goals_against")),
+            saves=_as_int(record.get("saves")),
+            shots_against=_as_int(record.get("shots_against")),
+            minutes_played=_as_float(record.get("minutes_played")),
+            season=season,
+        )
+
+        if any(
+            (
+                metrics.games_played,
+                metrics.wins,
+                metrics.losses,
+                metrics.save_percentage,
+                metrics.goals_against_average,
+                metrics.shots_against,
+            )
+        ):
+            existing.performance_metrics = [
+                item for item in existing.performance_metrics if item.season != season
+            ]
+            existing.performance_metrics.append(metrics)
+
+        if source and source not in existing.data_sources:
+            existing.data_sources.append(source)
+
+        existing.last_updated = datetime.now().isoformat()
+        return self.add_goalie(existing)
     
     def get_goalie(self, player_id: str) -> Optional[GoalieProfile]:
         """Get a goalie profile by player ID.
@@ -186,3 +250,23 @@ class GoalieDatabase:
             'leagues': leagues,
             'countries': countries
         }
+
+
+def _as_int(value: Any) -> int:
+    try:
+        return int(float(value or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _as_float(value: Any) -> float:
+    try:
+        return float(value or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _optional_string(value: Any) -> Optional[str]:
+    if value is None or value == "":
+        return None
+    return str(value)
