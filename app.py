@@ -31,11 +31,8 @@ if st.button("Generate AI Scouting Report"):
             profile_data = goalie.to_dict() if hasattr(goalie, "to_dict") else goalie.__dict__
 
             with st.spinner("Generating AI scouting report..."):
-                ai_service = OpenAIService()
-                report = ai_service.generate_scouting_report(profile_data)
+    ai_service = OpenAIService()
+    report = ai_service.generate_scouting_report(profile_data)
 
-            st.subheader("AI Scouting Report")
-            st.markdown(report)
-
-st.subheader("Scouting Notes")
-st.write(report.get("scouting_notes", "N/A"))
+st.subheader("AI Scouting Report")
+st.markdown(report)
