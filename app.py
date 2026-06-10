@@ -22,7 +22,7 @@ if st.button("Generate AI Scouting Report"):
     if not player_id:
         st.warning("Please enter a Player ID.")
     else:
-        db = GoalieDatabase()
+        db = GoalieDatabase("data/sample_database.json")
         goalie = db.get_goalie(player_id)
 
         if goalie is None:
