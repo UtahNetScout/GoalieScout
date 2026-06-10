@@ -34,5 +34,19 @@ if st.button("Generate AI Scouting Report"):
                 ai_service = OpenAIService()
                 report = ai_service.analyze_goalie(profile_data)
 
-            st.subheader("AI Scouting Report")
-            st.write(report)
+        st.subheader("Overall Rating")
+st.metric("Rating", report.get("overall_rating", "N/A"))
+
+st.subheader("Strengths")
+for strength in report.get("strengths", []):
+    st.write(f"- {strength}")
+
+st.subheader("Weaknesses")
+for weakness in report.get("weaknesses", []):
+    st.write(f"- {weakness}")
+
+st.subheader("NHL Readiness")
+st.write(report.get("nhl_readiness", "N/A"))
+
+st.subheader("Scouting Notes")
+st.write(report.get("scouting_notes", "N/A"))
