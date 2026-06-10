@@ -1,9 +1,11 @@
+import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).parent
-SRC = ROOT / "src"
+import streamlit as st
 
+ROOT = Path(__file__).resolve().parent
+SRC = ROOT / "src"
 sys.path.insert(0, str(SRC))
 
 from goaliescout.data.database import GoalieDatabase
