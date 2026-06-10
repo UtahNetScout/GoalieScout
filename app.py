@@ -11,7 +11,6 @@ sys.path.insert(0, str(SRC))
 from goaliescout.data.database import GoalieDatabase
 from goaliescout.ai.services import OpenAIService
 
-
 st.title("GoalieScout AI Demo")
 
 st.write("Try searching for Player ID: hellebuyck_37")
@@ -22,12 +21,6 @@ if st.button("Generate AI Scouting Report"):
     if not player_id.strip():
         st.warning("Please enter a Player ID.")
     else:
-        db = GoalieDatabase("data/sample_database.json")
-        goalie = db.get_goalie(player_id.strip())
-
-        if goalie is None:
-            st.error(f"No goalie found for Player ID: {player_id}")
-            else:
         db = GoalieDatabase("data/sample_database.json")
         goalie = db.get_goalie(player_id.strip())
 
