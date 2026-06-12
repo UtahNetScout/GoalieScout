@@ -18,6 +18,8 @@ yet a production service.
 - Advanced analytics for GSAx, shot quality, danger-zone save percentage,
   rebound control, rush defense, consistency, movement, and age curves
 - A configurable composite GoalieScout score with data-completeness reporting
+- An interactive Decision Room with scenario weighting, ranking sensitivity,
+  human review gates, and exportable decision briefs
 - OpenAI, Anthropic, and Ollama service adapters
 - Markdown and HTML scouting reports, blog content, and social output
 - CLI commands for scouting, analytics, synchronization, discovery, and data
@@ -138,7 +140,8 @@ product hypotheses, not a peer-reviewed player-evaluation standard.
 
 ## Current Limitations
 
-- The platform is a CLI and library, not a deployed multi-user web service.
+- The Streamlit interface is a portfolio demo, not an authenticated multi-user
+  production service.
 - Several scrapers depend on third-party page structures and require ongoing
   maintenance.
 - Remote-source tests use mocked responses; live integration checks are still
@@ -163,3 +166,8 @@ product hypotheses, not a peer-reviewed player-evaluation standard.
 GoalieScout supports analysis and scouting workflows. It does not replace
 official statistics, video review, medical evaluation, or professional
 judgment.
+
+The Streamlit Decision Room uses anonymized illustrative candidate packets to
+demonstrate workflow behavior. These packets are not evaluations of real
+players. Composite weights and normalization ranges remain product hypotheses
+that require broader calibration.
