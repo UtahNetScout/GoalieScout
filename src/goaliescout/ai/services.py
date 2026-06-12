@@ -95,7 +95,7 @@ class OpenAIService(AIService):
             return self._fallback_analysis(profile_data)
     
     def generate_scouting_report(self, profile_data: Dict[str, Any]) -> str:
-        """Generate detailed scouting report using GPT-4."""
+        """Generate an evidence-grounded scouting report using GPT-4."""
         if not self.client:
             return self._fallback_report(profile_data)
         
@@ -105,10 +105,17 @@ class OpenAIService(AIService):
             response = self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "You are a professional hockey scout writing detailed scouting reports."},
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a hockey decision-support analyst. Use only the "
+                            "supplied evidence, distinguish facts from interpretation, "
+                            "and state when video or additional data is required."
+                        ),
+                    },
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.7,
+                temperature=0.2,
                 max_tokens=2000
             )
             
@@ -166,9 +173,14 @@ Format your response as JSON."""
         return prompt
 
     def _create_report_prompt(self, profile_data: Dict[str, Any]) -> str:
-        """Create prompt for scouting report generation."""
+        """Create a grounded prompt for scouting report generation."""
         demographics = profile_data.get('demographics', {})
         advanced = profile_data.get('advanced_metrics', {})
+        metrics = profile_data.get('performance_metrics', [])
+        achievements = profile_data.get('notable_achievements', [])
+        comparisons = profile_data.get('nhl_comparisons', [])
+        stored_analysis = profile_data.get('ai_analysis') or {}
+        sources = profile_data.get('data_sources', [])
 
         advanced_section = ""
         if advanced:
@@ -181,18 +193,95 @@ Key Advanced Metrics:
 - Performance Consistency Score: {advanced.get('consistency_score', 'N/A')}
 """
 
-        return f"""Generate a professional scouting report for goalie {demographics.get('name', 'Unknown')}
-who plays in the {profile_data.get('league', 'Unknown')} league.
-{advanced_section}
-Include sections on:
-- Player Overview
-- Technical Skills
-- Mental Game
-- Physical Attributes
-- Development Projection
-- Conclusion
+        return f"""Create an evidence-grounded decision-support report in Markdown.
 
-Be detailed and professional."""
+PLAYER RECORD
+- Name: {demographics.get('name', 'Unknown')}
+- Team: {profile_data.get('current_team', 'Unknown')}
+- League: {profile_data.get('league', 'Unknown')}
+- Country: {demographics.get('country', 'Unknown')}
+- Date of birth: {demographics.get('date_of_birth', 'Unknown')}
+- Height: {demographics.get('height', 'Unknown')}
+- Weight: {demographics.get('weight', 'Unknown')}
+- Catches: {demographics.get('catches', 'Unknown')}
+- Dataset last updated: {profile_data.get('last_updated', 'Unknown')}
+
+SEASON STATISTICS
+{self._format_metrics(metrics)}
+
+NOTABLE ACHIEVEMENTS
+{self._format_list(achievements)}
+
+CURATED EVALUATION CONTEXT
+- Rating: {stored_analysis.get('overall_rating', 'N/A')} / 100
+- Readiness: {stored_analysis.get('nhl_readiness', 'Not assessed')}
+- Strengths: {self._format_list(stored_analysis.get('strengths', []))}
+- Risks or limitations: {self._format_list(stored_analysis.get('weaknesses', []))}
+- Notes: {stored_analysis.get('scouting_notes', 'No curated notes available')}
+
+COMPARISON CONTEXT
+{self._format_comparisons(comparisons)}
+{advanced_section}
+
+DATA SOURCES
+{self._format_list(sources)}
+
+REQUIRED OUTPUT
+## Executive Summary
+Give a concise assessment tied to the supplied season and career context.
+
+## Evidence Snapshot
+Use a compact Markdown table of supplied statistics and achievements.
+
+## Evidence-Based Strengths
+Explain only strengths supported by the supplied evidence. Label curated
+scouting observations as interpretation, not measured fact.
+
+## Risks and Open Questions
+Identify sample-size, freshness, playoff, workload, missing-data, or validation
+questions supported by the record.
+
+## Decision Recommendation
+State the likely role and the next decision a hockey organization could make.
+Do not describe an established NHL player as a prospect or use a development
+projection unless the supplied record supports it.
+
+## Human Review Checklist
+List claims that require video review or additional tracking data.
+
+GROUNDING RULES
+- Do not invent statistics, awards, injuries, contract facts, current-season
+  results, or biographical details.
+- Do not claim mental toughness, body language, anticipation, flexibility,
+  rebound control, movement quality, or puck handling as observed facts unless
+  those traits are explicitly supplied.
+- Do not imply the dataset is current beyond its last-updated timestamp.
+- When evidence is missing, say "not established by the available data."
+- Keep the report under 700 words and avoid generic praise.
+
+The report supports human review and does not replace video scouting,
+medical evaluation, or professional judgment."""
+
+    @staticmethod
+    def _format_list(items: List[Any]) -> str:
+        """Format values as Markdown bullets without inventing content."""
+        if not items:
+            return "- Not available"
+        return "\n".join(f"- {item}" for item in items)
+
+    @staticmethod
+    def _format_comparisons(comparisons: List[Dict[str, Any]]) -> str:
+        """Format supplied player comparisons for the report prompt."""
+        if not comparisons:
+            return "- Not available"
+        return "\n".join(
+            (
+                f"- {item.get('comparable_player', 'Unknown')}: "
+                f"{item.get('similarity_score', 'N/A')} similarity; "
+                f"{item.get('comparison_notes', 'no notes')}"
+            )
+            for item in comparisons
+        )
     
     def _format_metrics(self, metrics: List[Dict[str, Any]]) -> str:
         """Format performance metrics for prompt."""
@@ -236,18 +325,52 @@ Be detailed and professional."""
         }
     
     def _fallback_report(self, profile_data: Dict[str, Any]) -> str:
-        """Fallback report when API is unavailable."""
+        """Build an evidence-only report when the API is unavailable."""
         demographics = profile_data.get('demographics', {})
-        return f"""Scouting Report: {demographics.get('name', 'Unknown')}
+        metrics = profile_data.get('performance_metrics', [])
+        latest = metrics[-1] if metrics else {}
+        achievements = profile_data.get('notable_achievements', [])
+        sources = profile_data.get('data_sources', [])
+        analysis = profile_data.get('ai_analysis') or {}
 
-Note: AI-generated report unavailable. Please configure OpenAI API key.
+        return f"""## Executive Summary
 
-Basic Information:
-- Name: {demographics.get('name', 'Unknown')}
-- Country: {demographics.get('country', 'Unknown')}
-- League: {profile_data.get('league', 'Unknown')}
+{demographics.get('name', 'Unknown')} is listed as a
+{analysis.get('nhl_readiness', 'goalie with an unassessed role')} for the
+{profile_data.get('current_team', 'unknown team')}. This evidence-only fallback
+uses the stored dataset because live AI analysis is unavailable.
 
-For detailed AI-powered analysis, please set up API credentials.
+## Evidence Snapshot
+
+| Field | Available value |
+| --- | --- |
+| Season | {latest.get('season', 'Not available')} |
+| Games played | {latest.get('games_played', 'Not available')} |
+| Record | {latest.get('wins', 0)}-{latest.get('losses', 0)}-{latest.get('overtime_losses', 0)} |
+| Save percentage | {latest.get('save_percentage', 'Not available')} |
+| Goals-against average | {latest.get('goals_against_average', 'Not available')} |
+| Dataset updated | {profile_data.get('last_updated', 'Unknown')} |
+
+## Notable Achievements
+
+{self._format_list(achievements)}
+
+## Decision Recommendation
+
+Review the supplied season record and curated evaluation context, then validate
+technical and mental-game claims through video and additional tracking data.
+
+## Human Review Checklist
+
+- Validate movement, rebound control, and puck-handling observations on video.
+- Confirm the latest available season and award information.
+- Compare performance against relevant peers and playoff samples.
+
+## Sources
+
+{self._format_list(sources)}
+
+_AI service unavailable. No new scouting claims were generated._
 """
 
 
