@@ -37,6 +37,11 @@
           "comparison_notes": "Similar elite workload profile, calm technical base, strong tracking, and ability to control games through positioning and rebound management"
         }
       ],
+      "notable_achievements": [
+        "2024-25 Hart Memorial Trophy",
+        "2024-25 Vezina Trophy",
+        "2024-25 William M. Jennings Trophy"
+      ],
       "ai_analysis": {
         "overall_rating": 97.0,
         "strengths": [
@@ -57,8 +62,9 @@
       },
       "last_updated": "2026-06-10T08:00:00",
       "data_sources": [
-        "manual_entry",
-        "NHL_stats"
+        "NHL.com player statistics",
+        "NHL.com 2025 awards",
+        "GoalieScout curated evaluation"
       ]
     }
   ],

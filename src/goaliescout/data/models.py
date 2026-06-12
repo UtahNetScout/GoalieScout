@@ -120,6 +120,7 @@ class GoalieProfile:
     performance_metrics: List[PerformanceMetrics] = field(default_factory=list)
     injury_history: List[InjuryRecord] = field(default_factory=list)
     nhl_comparisons: List[NHLComparison] = field(default_factory=list)
+    notable_achievements: List[str] = field(default_factory=list)
     ai_analysis: Optional[AIAnalysis] = None
     last_updated: str = field(default_factory=lambda: datetime.now().isoformat())
     data_sources: List[str] = field(default_factory=list)
@@ -135,6 +136,7 @@ class GoalieProfile:
             'performance_metrics': [m.to_dict() for m in self.performance_metrics],
             'injury_history': [i.to_dict() for i in self.injury_history],
             'nhl_comparisons': [c.to_dict() for c in self.nhl_comparisons],
+            'notable_achievements': self.notable_achievements,
             'ai_analysis': self.ai_analysis.to_dict() if self.ai_analysis else None,
             'last_updated': self.last_updated,
             'data_sources': self.data_sources
@@ -148,6 +150,7 @@ class GoalieProfile:
         performance_metrics = [PerformanceMetrics(**m) for m in data.get('performance_metrics', [])]
         injury_history = [InjuryRecord(**i) for i in data.get('injury_history', [])]
         nhl_comparisons = [NHLComparison(**c) for c in data.get('nhl_comparisons', [])]
+        notable_achievements = list(data.get('notable_achievements', []))
         ai_analysis = AIAnalysis(**data['ai_analysis']) if data.get('ai_analysis') else None
         
         return cls(
@@ -159,6 +162,7 @@ class GoalieProfile:
             performance_metrics=performance_metrics,
             injury_history=injury_history,
             nhl_comparisons=nhl_comparisons,
+            notable_achievements=notable_achievements,
             ai_analysis=ai_analysis,
             last_updated=data.get('last_updated', datetime.now().isoformat()),
             data_sources=data.get('data_sources', [])
